@@ -39,6 +39,28 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass, config):
     hass.data.setdefault(DOMAIN, {})
 
+    async def play_video(service):
+        """Play a specific TV4 Play video by video_id"""
+        entity_id = service.data.get(CONF_ENTITY_ID)
+        video_id = service.data.get("video_id")
+        config_entry_id = service.data.get(CONF_CONFIG_ENTRY)
+    
+        config_entry = hass.data[DOMAIN][config_entry_id]
+        refresh_token: str = config_entry["refresh_token"]
+    
+        access_token = await fetch_access_token(refresh_token)
+    
+        # Direct video_url
+        video_url = await get_video_url(access_token, video_id)
+    
+        service_data = {
+            "entity_id": entity_id,
+            "media_content_id": video_url,
+            "media_content_type": "video",
+        }
+
+    await hass.services.async_call("media_player", "play_media", service_data)
+
     async def play_suggested(service):
         """Play a tv4 play video"""
 
