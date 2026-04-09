@@ -10,7 +10,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.const import CONF_ENTITY_ID
 
 from .const import DOMAIN, CONF_CONFIG_ENTRY, CONF_PROGRAM_ID
-from .tv4play import (
+from .video_url_fetch.video_fetch import (
     fetch_access_token,
     get_suggested_episode,
     get_video_url,
@@ -64,7 +64,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         await hass.services.async_call("media_player", "play_media", service_data, blocking=True)
 
-    # New play_video service for direct video_id (e.g. Beck movies)
+    # New play_video service for direct video_id (Beck films etc.)
     async def play_video(service: ServiceCall):
         """Play a specific TV4 Play video by video_id."""
         entity_id = service.data.get(CONF_ENTITY_ID)
