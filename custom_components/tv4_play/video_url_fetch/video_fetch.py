@@ -53,42 +53,45 @@ async def response_error(response) -> str:
         return "Unknown error"
 
 
-async def get_video_url(access_token: str, id: str, headers={}) -> str:
-    """Get the CDN video url from an episode"""
+async def get_video_url(access_token: str, video_id: str):
+    """Get the video stream URL for a specific video_id."""
+    url = "https://playback2.a2d.tv/video"
 
-    url = f"{PLAYBACK_URL}/{id}"
+    params = {
+        "service": "tv4",
+        "device": "browser",
+        "protocol": "hls",           # <-- Ändrat från vad det var tidigare
+        "videoId": video_id,
+        "drm": "widevine",
+        "client": "tv4play-web",
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json",
+    }
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(
-            url,
-            headers={
-                **headers,
-                "x-jwt": f"Bearer {access_token}",
-            },
-            params={
-                "service": "tv4play",
-                "device": "browser",
-                "protocol": "dash",
-                "browser": "GoogleChrome",
-                "capabilities": "live-drm-adstitch-2,yospace3",
-                "preview": "false",
-            },
-        ) as response:
+        async with session.get(url, params=params, headers=headers) as response:
             data = await response.json()
-            if "errorCode" in data:
-                raise Exception(
-                    "Could not fetch the CDN data: {}".format(data["errorCode"])
-                )
 
-            if response.status != 200:
-                raise Exception(
-                    f"Could not fetch the CDN data, status code: {response.status}"
-                )
+            if response.status != 200 or data.get("errorCode"):
+                error_code = data.get("errorCode", "unknown")
+                _LOGGER.error("Failed to fetch video URL: %s", error_code)
+                raise Exception(f"Could not fetch the CDN data: {error_code}")
 
-            video_url = data["playbackItem"]["manifestUrl"]
+            # Försök hitta den bästa stream-URL:en
+            if "playback" in data and "items" in data["playback"]:
+                for item in data["playback"]["items"]:
+                    if item.get("protocol") == "hls":
+                        return item.get("url")
 
-            return video_url
+            # Fallback
+            if "playback" in data and "url" in data["playback"]:
+                return data["playback"]["url"]
 
+            raise Exception("No valid video URL found in response")
 
 async def get_suggested_episode(access_token: str, program_id: str) -> Episode:
     "Get information about the suggested episode based on the program name"
