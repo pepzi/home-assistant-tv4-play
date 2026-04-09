@@ -30,7 +30,11 @@ SERVICE_PLAY_SUGGESTED_SCHEMA = vol.Schema(
         CONF_PROGRAM_ID: str,
     }
 )
-
+SERVICE_PLAY_VIDEO_SCHEMA = vol.Schema({
+    vol.Required(CONF_ENTITY_ID): cv.entity_id,
+    vol.Required("video_id"): cv.string,
+    vol.Required(CONF_CONFIG_ENTRY): cv.string,
+})
 PLATFORMS = [Platform.SENSOR]
 
 _LOGGER = logging.getLogger(__name__)
@@ -93,6 +97,10 @@ async def async_setup(hass, config):
 
     hass.services.async_register(
         DOMAIN, SERVICE_PLAY_SUGGESTED, play_suggested, SERVICE_PLAY_SUGGESTED_SCHEMA
+    )
+
+    hass.services.async_register(
+        DOMAIN, "play_video", play_video, SERVICE_PLAY_VIDEO_SCHEMA
     )
 
     return True
