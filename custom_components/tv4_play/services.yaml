@@ -1,18 +1,47 @@
 play_suggested:
-  description: Play the suggested video from the specified program name
-  target:
-    entity:
-      domain: media_player
-      supported_features:
-        - media_player.MediaPlayerEntityFeature.PLAY_MEDIA
+  name: "Play suggested"
+  description: "Play the suggested/latest episode of a program"
   fields:
-    config_entry:
+    entity_id:
+      name: "Media player"
+      description: "The media player entity to play on"
       required: true
       selector:
-        config_entry:
-          integration: tv4_play
+        entity:
+          domain: media_player
     program_id:
+      name: "Program ID"
+      description: "The program ID from TV4 Play"
+      required: false
+      selector:
+        text:
+    config_entry:
+      name: "Config Entry ID"
+      description: "The config entry ID of the TV4 Play integration"
       required: true
-      example: "67ff22880e988cd4d149"
+      selector:
+        text:
+
+play_video:
+  name: "Play video"
+  description: "Play a specific TV4 Play video by video_id"
+  fields:
+    entity_id:
+      name: "Media player"
+      description: "The media player entity to play on"
+      required: true
+      selector:
+        entity:
+          domain: media_player
+    video_id:
+      name: "Video ID"
+      description: "The video ID from TV4 Play (the part after /video/ in the URL)"
+      required: true
+      selector:
+        text:
+    config_entry:
+      name: "Config Entry ID"
+      description: "The config entry ID of the TV4 Play integration"
+      required: true
       selector:
         text:
