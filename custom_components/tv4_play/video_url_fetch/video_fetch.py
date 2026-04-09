@@ -4,6 +4,9 @@ import aiohttp
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
 )
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 REFRESH_TOKEN_URL = "https://auth.tv4.a2d.tv/v2/auth/token"
 PLAYBACK_URL = "https://playback2.a2d.tv/play"
@@ -60,7 +63,7 @@ async def get_video_url(access_token: str, video_id: str):
     params = {
         "service": "tv4",
         "device": "browser",
-        "protocol": "hls",           # <-- Ändrat från vad det var tidigare
+        "protocol": "hls",
         "videoId": video_id,
         "drm": "widevine",
         "client": "tv4play-web",
@@ -78,21 +81,21 @@ async def get_video_url(access_token: str, video_id: str):
 
             if response.status != 200 or data.get("errorCode"):
                 error_code = data.get("errorCode", "unknown")
-                _LOGGER.error("Failed to fetch video URL: %s", error_code)
+                _LOGGER.error("Failed to fetch video URL for %s: %s", video_id, error_code)
                 raise Exception(f"Could not fetch the CDN data: {error_code}")
 
-            # Försök hitta den bästa stream-URL:en
+            # Hitta HLS stream
             if "playback" in data and "items" in data["playback"]:
                 for item in data["playback"]["items"]:
-                    if item.get("protocol") == "hls":
-                        return item.get("url")
+                    if item.get("protocol") == "hls" and "url" in item:
+                        return item["url"]
 
-            # Fallback
+            # Fallback om ingen items-lista
             if "playback" in data and "url" in data["playback"]:
                 return data["playback"]["url"]
 
             raise Exception("No valid video URL found in response")
-
+            
 async def get_suggested_episode(access_token: str, program_id: str) -> Episode:
     "Get information about the suggested episode based on the program name"
 
